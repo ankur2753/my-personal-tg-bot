@@ -24,6 +24,8 @@ class Settings(BaseModel):
     aws_access_key_id: Optional[str] = None
     aws_secret_access_key: Optional[str] = None
 
+    google_sheets_webhook_url: Optional[str] = Field(default=None)
+
     topic_job_hunt_requests: str = Field(default="agent.job-hunt.requests")
     topic_job_hunt_responses: str = Field(default="agent.job-hunt.responses")
     topic_finance_requests: str = Field(default="agent.finance.requests")
@@ -32,10 +34,8 @@ class Settings(BaseModel):
 
     def is_user_allowed(self, user_id: int, username: Optional[str] = None) -> bool:
         """Check if a Telegram numeric user ID OR username is whitelisted."""
-        # 1. Check numeric user_id or str(user_id)
         if user_id in self.allowed_telegram_user_ids or str(user_id) in [str(x) for x in self.allowed_telegram_user_ids]:
             return True
-        # 2. Check string username (e.g. "shootingDragon" or "@shootingDragon")
         if username:
             clean_username = username.lstrip("@").lower()
             for item in self.allowed_telegram_user_ids:
@@ -82,6 +82,9 @@ class Settings(BaseModel):
                 if "secret_access_key" in sqs_cfg:
                     data["aws_secret_access_key"] = sqs_cfg["secret_access_key"]
 
+                if "google_sheets_webhook_url" in raw_json:
+                    data["google_sheets_webhook_url"] = raw_json["google_sheets_webhook_url"]
+
                 if "job_hunt_requests" in topics_cfg:
                     data["topic_job_hunt_requests"] = topics_cfg["job_hunt_requests"]
                 if "job_hunt_responses" in topics_cfg:
@@ -116,6 +119,8 @@ class Settings(BaseModel):
             data["redis_port"] = int(os.getenv("REDIS_PORT"))
         if os.getenv("REDIS_PASSWORD"):
             data["redis_password"] = os.getenv("REDIS_PASSWORD")
+        if os.getenv("GOOGLE_SHEETS_WEBHOOK_URL"):
+            data["google_sheets_webhook_url"] = os.getenv("GOOGLE_SHEETS_WEBHOOK_URL")
 
         return cls(**data)
 
