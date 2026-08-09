@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  personal-queue:
+    image: redis:7-alpine
+    container_name: personal_queue_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --save 60 1 --loglevel notice --requirepass ${REDIS_PASSWORD:-secret_redis_pass}
+
+volumes:
+  redis_data:
