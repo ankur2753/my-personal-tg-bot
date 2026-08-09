@@ -103,8 +103,8 @@ async def handle_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE
     await handle_welcome(update, context)
 
 
-def main():
-    """Bot application entrypoint."""
+async def async_main():
+    """Bot application async entrypoint."""
     settings = get_settings()
     logger.info("Initializing my-personal-tg-bot Central Gateway...")
 
@@ -127,8 +127,7 @@ def main():
     else:
         broker = SQSBroker()
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(broker.connect())
+    await broker.connect()
 
     router = IntentRouter(broker=broker, settings=settings)
 
@@ -144,7 +143,20 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_message))
 
     logger.info("Telegram Gateway Polling started. Press Ctrl+C to stop.")
-    app.run_polling()
+    
+    async with app:
+        await app.start()
+        await app.updater.start_polling()
+        # Keep polling running asynchronously
+        while True:
+            await asyncio.sleep(3600)
+
+
+def main():
+    try:
+        asyncio.run(async_main())
+    except (KeyboardInterrupt, SystemExit):
+        logger.info("Gateway service stopped cleanly.")
 
 
 if __name__ == "__main__":
