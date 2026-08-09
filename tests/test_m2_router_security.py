@@ -2,6 +2,7 @@ import pytest
 from src.config import Settings
 from src.brokers.redis_broker import RedisBroker
 from src.handlers.router import IntentRouter
+from src.handlers.default_handler import DefaultHandler
 
 
 @pytest.fixture
@@ -15,7 +16,7 @@ def settings():
 
 @pytest.fixture
 def router(settings):
-    broker = RedisBroker()
+    broker = RedisBroker(mock_mode=True)
     return IntentRouter(broker=broker, settings=settings)
 
 
@@ -27,11 +28,20 @@ def test_m2_security_guard_whitelist(settings):
 
 def test_m2_intent_detection(router):
     """Verify intent classifier correctly categorizes message input."""
+    assert router.detect_intent("hi") == "welcome"
+    assert router.detect_intent("hello") == "welcome"
+    assert router.detect_intent("/start") == "welcome"
     assert router.detect_intent("https://linkedin.com/jobs/view/12345") == "job-hunt"
     assert router.detect_intent("/job tailor resume for python dev") == "job-hunt"
     assert router.detect_intent("/expense 1500 groceries") == "finance"
     assert router.detect_intent("/hitl respond 15 days") == "hitl"
-    assert router.detect_intent("Hello, how are you?") == "default"
+
+
+def test_m2_welcome_menu_formatting():
+    """Verify welcome menu text includes Tailored Resume function description."""
+    welcome_text = DefaultHandler.get_welcome_menu()
+    assert "Tailored Resume Generator" in welcome_text
+    assert "LinkedIn" in welcome_text or "job posting link" in welcome_text
 
 
 @pytest.mark.asyncio

@@ -16,10 +16,12 @@ class IntentRouter:
         """Classify message intent based on pattern matching or slash commands.
         
         Returns:
-            "job-hunt" | "finance" | "hitl" | "default"
+            "welcome" | "job-hunt" | "finance" | "hitl" | "default"
         """
         text_lower = text.strip().lower()
-        if text_lower.startswith("/job") or "linkedin.com/jobs" in text_lower or "naukri.com" in text_lower or "careers" in text_lower or text_lower.startswith("http"):
+        if text_lower in ["hi", "hello", "hey", "start", "/start", "/help", "help"]:
+            return "welcome"
+        elif text_lower.startswith("/job") or "linkedin.com/jobs" in text_lower or "naukri.com" in text_lower or "careers" in text_lower or text_lower.startswith("http"):
             return "job-hunt"
         elif text_lower.startswith("/expense") or text_lower.startswith("/finance") or "budget" in text_lower:
             return "finance"
@@ -40,7 +42,7 @@ class IntentRouter:
             topic = self.settings.topic_job_hunt_requests
             envelope = MessageEnvelope(
                 target_agent="job-hunt-agent",
-                action="TAILOR_RESUME" if ("http" in text or "jobs" in text) else "GENERAL_JOB_QUERY",
+                action="TAILOR_RESUME" if ("http" in text or "jobs" in text or "naukri" in text) else "GENERAL_JOB_QUERY",
                 user_id=user_id,
                 chat_id=chat_id,
                 payload=payload,
@@ -57,7 +59,6 @@ class IntentRouter:
                 reply_topic=self.settings.topic_finance_responses
             )
         else:
-            # Default fallback intent
             return None
 
         await self.broker.publish(topic, envelope)

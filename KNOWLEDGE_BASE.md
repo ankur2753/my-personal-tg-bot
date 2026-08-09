@@ -73,8 +73,8 @@ Every AI session MUST follow this protocol strictly:
 - [x] **Phase 1 (M1): Repository & Queue Broker Core**
   - Deliverables: Pluggable `BaseQueueBroker` with functional `RedisBroker` (`redis.asyncio` Streams with XADD/XREADGROUP) and `SQSBroker` fallback. Full JSON payload validation. Configurable via `appsettings.json`.
   - Test Suite: `tests/test_m1_broker_interface.py`
-- [ ] **Phase 2 (M2): Master Intent Router & Security Guard**
-  - Deliverables: Whitelist authentication guard (`ALLOWED_TELEGRAM_USER_IDS`), intent parser (`/job`, `/expense`, `/hitl`, URLs), and queue topic dispatcher.
+- [x] **Phase 2 (M2): Master Intent Router & Security Guard**
+  - Deliverables: Whitelist authentication guard (`ALLOWED_TELEGRAM_USER_IDS` / `allowed_user_ids`), intent parser (`hi`, `hello`, `/start`, `/job`, `/expense`, URLs), feature capabilities menu, and polling update dispatch loop.
   - Test Suite: `tests/test_m2_router_security.py`
 - [ ] **Phase 3 (M3): Job Hunt Agent Adapter (`jobHunt`)**
   - Deliverables: Request/Response queue bindings for job application workflow. Media handlers for tailored PDF resumes and PNG previews.
@@ -158,3 +158,15 @@ Every AI session MUST follow this protocol strictly:
 * **Challenges Faced**:
   - Docker daemon offline during test run. Solution: Designed `RedisBroker` with dual-mode capability (live Redis Streams when reachable + zero-dependency fallback for local offline testing).
 * **Next Active Phase**: **Phase 2 (M2): Master Intent Router & Security Guard**.
+
+### Session 3 — 2026-08-09
+* **Scope**: Phase 2 Complete — Master Intent Router, Telegram Chat Logic & Welcome Capabilities Menu.
+* **Work Completed**:
+  1. Implemented basic Telegram chat logic in `src/main.py` using `python-telegram-bot` (`ApplicationBuilder`).
+  2. Added command handlers (`/start`, `/help`, `/status`) and text message handlers (`hi`, `hello`, `hey`, job posting URLs).
+  3. Formatted welcoming capabilities menu in `DefaultHandler.get_welcome_menu()` listing active functions (Tailored Resume Generator).
+  4. Integrated security whitelisting guard: blocks non-whitelisted Telegram user IDs.
+  5. Wired job posting URL detection to queue request envelopes into `agent.job-hunt.requests`.
+  6. Updated `tests/test_m2_router_security.py` — all 13 test cases passed cleanly.
+* **Challenges Faced**: None.
+* **Next Active Phase**: **Phase 3 (M3): Job Hunt Agent Adapter (`jobHunt`)**.
