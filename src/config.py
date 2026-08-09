@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Union
 from pydantic import BaseModel, Field
 
 
@@ -9,7 +9,9 @@ class Settings(BaseModel):
     """Application Configuration Settings with JSON and Env support."""
 
     telegram_bot_token: str = Field(default="YOUR_BOTFATHER_TOKEN_HERE")
-    allowed_telegram_user_ids: List[int] = Field(default_factory=lambda: [123456789])
+    allowed_telegram_user_ids: List[Union[int, str]] = Field(
+        default_factory=lambda: [123456789, "shootingDragon", "@shootingDragon"]
+    )
 
     queue_provider: str = Field(default="redis")
 
@@ -28,9 +30,18 @@ class Settings(BaseModel):
     topic_finance_responses: str = Field(default="agent.finance.responses")
     topic_global_notifications: str = Field(default="notifications.global")
 
-    def is_user_allowed(self, user_id: int) -> bool:
-        """Check if a Telegram user ID is whitelisted."""
-        return user_id in self.allowed_telegram_user_ids
+    def is_user_allowed(self, user_id: int, username: Optional[str] = None) -> bool:
+        """Check if a Telegram numeric user ID OR username is whitelisted."""
+        # 1. Check numeric user_id or str(user_id)
+        if user_id in self.allowed_telegram_user_ids or str(user_id) in [str(x) for x in self.allowed_telegram_user_ids]:
+            return True
+        # 2. Check string username (e.g. "shootingDragon" or "@shootingDragon")
+        if username:
+            clean_username = username.lstrip("@").lower()
+            for item in self.allowed_telegram_user_ids:
+                if isinstance(item, str) and item.lstrip("@").lower() == clean_username:
+                    return True
+        return False
 
     @classmethod
     def load_from_json(cls, file_path: str = "appsettings.json") -> "Settings":
@@ -48,7 +59,7 @@ class Settings(BaseModel):
                 sqs_cfg = queue_cfg.get("aws_sqs", {})
                 topics_cfg = raw_json.get("topics", {})
 
-                if "bot_token" in telegram_cfg:
+                if "bot_token" in telegram_cfg and telegram_cfg["bot_token"]:
                     data["telegram_bot_token"] = telegram_cfg["bot_token"]
                 if "allowed_user_ids" in telegram_cfg:
                     data["allowed_telegram_user_ids"] = telegram_cfg["allowed_user_ids"]
@@ -84,13 +95,19 @@ class Settings(BaseModel):
             except Exception as e:
                 pass
 
-        # Environment variable overrides (highest priority)
+        # Environment variable overrides
         if os.getenv("TELEGRAM_BOT_TOKEN"):
             data["telegram_bot_token"] = os.getenv("TELEGRAM_BOT_TOKEN")
         if os.getenv("ALLOWED_TELEGRAM_USER_IDS"):
-            data["allowed_telegram_user_ids"] = [
-                int(x.strip()) for x in os.getenv("ALLOWED_TELEGRAM_USER_IDS").split(",") if x.strip().isdigit()
-            ]
+            raw_val = os.getenv("ALLOWED_TELEGRAM_USER_IDS")
+            items = []
+            for x in raw_val.split(","):
+                x_str = x.strip()
+                if x_str.isdigit():
+                    items.append(int(x_str))
+                elif x_str:
+                    items.append(x_str)
+            data["allowed_telegram_user_ids"] = items
         if os.getenv("QUEUE_PROVIDER"):
             data["queue_provider"] = os.getenv("QUEUE_PROVIDER")
         if os.getenv("REDIS_HOST"):
