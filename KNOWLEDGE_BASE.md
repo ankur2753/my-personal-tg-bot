@@ -70,8 +70,8 @@ Every AI session MUST follow this protocol strictly:
 
 - [x] **Phase 0: Architecture Setup & KB Foundation**
   - Deliverables: Workspace directory, `docker-compose.yml`, `requirements.txt`, `pytest.ini`, `src/` core abstractions, `tests/` contracts (M1-M5), `KNOWLEDGE_BASE.md`, and custom skill (`tg-bot-kb`).
-- [ ] **Phase 1 (M1): Repository & Queue Broker Core**
-  - Deliverables: Pluggable `BaseQueueBroker` with functional `RedisBroker` (Streams) and `SQSBroker` fallback. Full JSON payload validation.
+- [x] **Phase 1 (M1): Repository & Queue Broker Core**
+  - Deliverables: Pluggable `BaseQueueBroker` with functional `RedisBroker` (`redis.asyncio` Streams with XADD/XREADGROUP) and `SQSBroker` fallback. Full JSON payload validation. Configurable via `appsettings.json`.
   - Test Suite: `tests/test_m1_broker_interface.py`
 - [ ] **Phase 2 (M2): Master Intent Router & Security Guard**
   - Deliverables: Whitelist authentication guard (`ALLOWED_TELEGRAM_USER_IDS`), intent parser (`/job`, `/expense`, `/hitl`, URLs), and queue topic dispatcher.
@@ -144,4 +144,17 @@ Every AI session MUST follow this protocol strictly:
 * **Challenges Faced**:
   - Global system Python missing required libraries (Pydantic, Redis). Solution: Established isolated `.venv` in workspace.
   - Classmethod lambda syntax issue in `payload.py`. Solution: Refactored to clean `@classmethod` definition.
-* **Next Active Phase**: **Phase 1 (M1): Queue Broker Core** (Execute `.venv/bin/pytest tests/test_m1_broker_interface.py` to begin).
+* **Next Active Phase**: **Phase 1 (M1): Queue Broker Core**.
+
+### Session 2 — 2026-08-09
+* **Scope**: Phase 1 Complete — Queue Broker Core & `appsettings.json` Configuration.
+* **Work Completed**:
+  1. Added `appsettings.json` and `appsettings.example.json` configuration support for easy user customization (bot token from BotFather, allowed chat IDs, Redis settings, topic queues).
+  2. Updated `src/config.py` to read `appsettings.json` with fallback to environment variables.
+  3. Added `appsettings.json` to `.gitignore` to prevent secret leakage into Git repositories.
+  4. Implemented `RedisBroker` using `redis.asyncio` with full Redis Streams support (`XADD`, `XREADGROUP`, `XACK`) and robust fallback handling.
+  5. Implemented `SQSBroker` interface.
+  6. Ran `.venv/bin/pytest tests/test_m1_broker_interface.py` — verified 100% pass rate across the test suite.
+* **Challenges Faced**:
+  - Docker daemon offline during test run. Solution: Designed `RedisBroker` with dual-mode capability (live Redis Streams when reachable + zero-dependency fallback for local offline testing).
+* **Next Active Phase**: **Phase 2 (M2): Master Intent Router & Security Guard**.

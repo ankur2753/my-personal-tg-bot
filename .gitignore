@@ -2,6 +2,8 @@
 .env
 *.env
 !.env.example
+appsettings.json
+!appsettings.example.json
 
 # Python & Virtual Environment
 .venv/
