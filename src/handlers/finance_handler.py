@@ -1,5 +1,5 @@
 from ..brokers.base_broker import BaseQueueBroker
-from ..models.payload import MessageEnvelope
+from ..models.payload import MessageEnvelope, FinanceResponsePayload
 
 
 class FinanceHandler:
@@ -17,3 +17,7 @@ class FinanceHandler:
             payload={"raw_text": text},
             reply_topic="agent.finance.responses"
         )
+
+    def parse_response_envelope(self, envelope: MessageEnvelope) -> FinanceResponsePayload:
+        """Parse incoming MessageEnvelope from finance response queue."""
+        return FinanceResponsePayload.model_validate(envelope.payload)

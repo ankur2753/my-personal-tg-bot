@@ -48,6 +48,13 @@ class JobHuntResponsePayload(BaseModel):
     error_message: Optional[str] = None
 
 
+class FinanceResponsePayload(BaseModel):
+    """Specific payload data for finance responses."""
+
+    status: str
+    message: Optional[str] = None
+
+
 class HITLPromptPayload(BaseModel):
     """Payload data for Human-in-the-loop prompts."""
 
