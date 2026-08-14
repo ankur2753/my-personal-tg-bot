@@ -34,6 +34,8 @@ class JobHuntPayload(BaseModel):
     recruiter_profile: Optional[str] = None
     custom_notes: Optional[str] = None
     resume_path: Optional[str] = None
+    company: Optional[str] = None
+    role: Optional[str] = None
     action_type: str = "TAILOR_RESUME"  # TAILOR_RESUME | COLD_OUTREACH | ATS_CHECK
 
 

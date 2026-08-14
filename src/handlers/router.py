@@ -45,18 +45,33 @@ class IntentRouter:
             
             job_handler = JobAgentHandler(self.broker)
             
-            # Extract URL if present
             url = None
             jd_text = text
+            company = None
+            role = None
+            
             import re
-            url_match = re.search(r'(https?://[^\s]+)', text)
-            if url_match:
-                url = url_match.group(1)
-                jd_text = text.replace(url, '').strip()
+            if "|" in text:
+                parts = [p.strip() for p in text.split("|")]
+                for p in parts:
+                    if p.startswith("http"):
+                        url = p
+                    elif not company:
+                        company = p
+                    elif not role:
+                        role = p
+                jd_text = ""
+            else:
+                url_match = re.search(r'(https?://[^\s]+)', text)
+                if url_match:
+                    url = url_match.group(1)
+                    jd_text = text.replace(url, '').strip()
 
             job_payload = JobHuntPayload(
                 job_url=url,
                 custom_notes=jd_text,
+                company=company,
+                role=role,
                 action_type="TAILOR_RESUME" if url else "GENERAL_JOB_QUERY"
             )
             
@@ -75,16 +90,30 @@ class IntentRouter:
             
             url = None
             jd_text = text.replace("/referal", "").replace("/referral", "").strip()
+            company = None
+            role = None
             
             import re
-            url_match = re.search(r'(https?://[^\s]+)', text)
-            if url_match:
-                url = url_match.group(1)
-                # Keep the whole text in custom_notes so the gateway can parse it
+            if "|" in jd_text:
+                parts = [p.strip() for p in jd_text.split("|")]
+                for p in parts:
+                    if p.startswith("http"):
+                        url = p
+                    elif not company:
+                        company = p
+                    elif not role:
+                        role = p
+                jd_text = ""
+            else:
+                url_match = re.search(r'(https?://[^\s]+)', jd_text)
+                if url_match:
+                    url = url_match.group(1)
                 
             job_payload = JobHuntPayload(
                 job_url=url,
                 custom_notes=jd_text,
+                company=company,
+                role=role,
                 action_type="SEEK_REFERRAL"
             )
             
