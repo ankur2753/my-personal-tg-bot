@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   personal-queue:
@@ -6,10 +5,24 @@ services:
     container_name: personal_queue_redis
     restart: always
     ports:
-      - "6379:6379"
+      - "6380:6379"  # Changed to 6380 to avoid conflict with job-hunt-agent's Redis
     volumes:
       - redis_data:/data
     command: redis-server --save 60 1 --loglevel notice --requirepass ${REDIS_PASSWORD:-secret_redis_pass}
+
+  tg-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: my-personal-tg-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOST=personal-queue
+      - REDIS_PORT=6379
+    depends_on:
+      - personal-queue
 
 volumes:
   redis_data:
