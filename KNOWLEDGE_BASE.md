@@ -232,3 +232,14 @@ Every AI session MUST follow this protocol strictly:
   5. Tested end-to-end integration via Telegram; confirmed the bot successfully receives a Job URL, processes it via the agent in a separate subprocess managed by `honcho`, and delivers the generated PDF and Markdown response.
 * **Challenges Faced**: Redis Streams required mapping data accurately through `json.dumps()` inside the `envelope` key to conform strictly to the established `MessageEnvelope` pydantic model.
 * **Next Active Phase**: **Project Completed & Ready for Production Deployment**.
+
+### Session 10 — Production Stability & LLM Visual Verification (2026-08-14)
+* **Scope**: Fixing ATS Application False Positives, Logger crashes, and LLM Image Verification.
+* **Work Completed**:
+  1. Fixed `workday_adapter.py` to properly raise exceptions when form submissions fail, ensuring autonomous fallback triggers.
+  2. Fixed JSON parsing crash in `redis_gateway.py` where worker logs mixed with payload output.
+  3. Fixed TypeError crash in `remote_logger` where the ATS adapter was called incorrectly.
+  4. Updated `AgentRuntime.invoke_with_image` to explicitly instruct the CLI to use `view_file` on the image path so the LLM successfully evaluates failure screenshots.
+  5. Added automatic LLM visual screenshot analysis for all failure conditions to directly append the root cause to Telegram error payloads.
+* **Challenges Faced**: The `agy` CLI CLI needed explicit multimodal tool instructions to analyze screenshots, and standard output had to be heavily sanitized.
+* **Next Active Phase**: **Project Completed & Ready for Production Deployment**.

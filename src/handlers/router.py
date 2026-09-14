@@ -29,6 +29,12 @@ class IntentRouter:
             return "finance"
         elif text_lower.startswith("/hitl") or text_lower.startswith("/answer"):
             return "hitl"
+        elif text_lower.startswith("/process_referrals") or text_lower.startswith("/process_pending"):
+            return "process-referrals"
+        elif text_lower.startswith("/scrape_jobs") or text_lower.startswith("/scrape"):
+            return "scrape-jobs"
+        elif text_lower.startswith("/hunt"):
+            return "scrape-and-draft"
         return "default"
 
     async def route_message(self, text: str, user_id: int, chat_id: int, extra_payload: Optional[Dict[str, Any]] = None) -> Optional[MessageEnvelope]:
@@ -134,6 +140,42 @@ class IntentRouter:
                 payload=payload,
                 reply_topic=self.settings.topic_finance_responses
             )
+        elif intent == "process-referrals":
+            from .job_agent_handler import JobAgentHandler
+            from ..models.payload import JobHuntPayload
+            
+            job_handler = JobAgentHandler(self.broker)
+            job_payload = JobHuntPayload(
+                action_type="PROCESS_PENDING_REFERRALS"
+            )
+            envelope = job_handler.create_request_envelope(user_id, chat_id, job_payload)
+            topic = self.settings.topic_job_hunt_requests
+            
+        elif intent == "scrape-jobs":
+            from .job_agent_handler import JobAgentHandler
+            from ..models.payload import JobHuntPayload
+            
+            job_handler = JobAgentHandler(self.broker)
+            # You can parse keywords/location from the text later, for now we will send the text
+            job_payload = JobHuntPayload(
+                custom_notes=text.replace("/scrape_jobs", "").replace("/scrape", "").strip(),
+                action_type="SCRAPE_JOBS"
+            )
+            envelope = job_handler.create_request_envelope(user_id, chat_id, job_payload)
+            topic = self.settings.topic_job_hunt_requests
+
+        elif intent == "scrape-and-draft":
+            from .job_agent_handler import JobAgentHandler
+            from ..models.payload import JobHuntPayload
+            
+            job_handler = JobAgentHandler(self.broker)
+            job_payload = JobHuntPayload(
+                custom_notes=text.replace("/hunt", "").strip(),
+                action_type="SCRAPE_AND_DRAFT"
+            )
+            envelope = job_handler.create_request_envelope(user_id, chat_id, job_payload)
+            topic = self.settings.topic_job_hunt_requests
+
         else:
             return None
 

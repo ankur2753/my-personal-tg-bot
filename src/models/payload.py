@@ -47,6 +47,7 @@ class JobHuntResponsePayload(BaseModel):
     png_preview_path: Optional[str] = None
     ats_score: Optional[float] = None
     generated_text: Optional[str] = None
+    md_path: Optional[str] = None
     error_message: Optional[str] = None
 
 

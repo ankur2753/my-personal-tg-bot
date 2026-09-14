@@ -126,10 +126,25 @@ async def handle_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE
             if envelope:
                 reply_text = (
                     "💸 *Finance Request Queued!*\n\n"
-                    f"• *Action:* `{envelope.action}`\n"
-                    f"• *Message ID:* `{envelope.message_id}`\n"
-                    f"• *Queue Topic:* `{settings.topic_finance_requests}`\n\n"
-                    "Processing finance request..."
+                    f"Message ID: `{envelope.message_id}`\n"
+                    f"Agent: `{envelope.target_agent}`\n\n"
+                    "_I'll ping you once the transaction is processed!_"
+                )
+                await update.message.reply_text(reply_text, parse_mode="Markdown")
+        except Exception as e:
+            logger.error(f"Error routing message: {e}")
+            await update.message.reply_text(f"❌ Error queueing request: {e}")
+        return
+
+    if intent in ["process-referrals", "scrape-jobs", "scrape-and-draft"]:
+        try:
+            envelope = await router.route_message(text=text, user_id=user_id, chat_id=chat_id)
+            if envelope:
+                reply_text = (
+                    "🚀 *Job Scraper/Referral Request Queued!*\n\n"
+                    f"Message ID: `{envelope.message_id}`\n"
+                    f"Action: `{envelope.action}`\n\n"
+                    "_I'll ping you once the task is finished!_"
                 )
                 await update.message.reply_text(reply_text, parse_mode="Markdown")
         except Exception as e:
@@ -224,7 +239,15 @@ async def consume_job_responses(app, broker, settings):
                 pdf_path=response.pdf_path
             )
 
-            if response.generated_text:
+            if response.md_path:
+                try:
+                    with open(response.md_path, 'r', encoding='utf-8') as md_file:
+                        md_content = md_file.read()
+                        text += f"\n\n{md_content}"
+                except Exception as file_e:
+                    logger.error(f"Error reading md file: {file_e}")
+                    text += f"\n\n⚠️ Could not load drafted text from file. Error: `{file_e}`"
+            elif response.generated_text:
                 text += f"\n\n📝 *DM/Email Draft:*\n```text\n{response.generated_text}\n```"
 
             if response.error_message:
@@ -320,7 +343,7 @@ async def async_main():
 
     router = IntentRouter(broker=broker, settings=settings)
 
-    app = ApplicationBuilder().token(settings.telegram_bot_token).build()
+    app = ApplicationBuilder().token(settings.telegram_bot_token).connect_timeout(60.0).read_timeout(60.0).build()
 
     app.bot_data["settings"] = settings
     app.bot_data["broker"] = broker
